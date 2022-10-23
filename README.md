@@ -12,6 +12,12 @@ so the slides are from above.
 
 :slightly_smiling_face:fighting! fighting!
 
+Why I only have the notes for the CSAPP because all I wanna do is to finish the textbook notes and lab 
+
+the aim for the learning the NJU course is to finish his lab and have the solid fundemental for the next course -- OS on the linux.
+
+
+
 
 
 
