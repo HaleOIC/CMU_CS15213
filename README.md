@@ -16,6 +16,8 @@ Why I only have the notes for the CSAPP because all I wanna do is to finish the 
 
 the aim for the learning the NJU course is to finish his lab and have the solid fundemental for the next course -- OS on the linux.
 
+and for the test problems, what I will do is just the problems after each part, not all every problem will be solved, especially the homework after each Lecture! 
+
 
 
 
