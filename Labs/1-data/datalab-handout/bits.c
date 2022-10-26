@@ -170,9 +170,12 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-	int flagValue = ~ x | ~(0b1111111);
-	int flagSign = x | (0b10000000);
-	return (!flagValue) & (!flagSign);
+  /*
+    x + x <==> x << 1
+    (!(~(x + x) ^ 1)) -> check whether the nonsigned part all are 1;
+    !(!(~x)) -> check whther the signed part is 0;
+  */
+  return (!(~(x + x) ^ 1)) & !(!(~x));
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -183,7 +186,13 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+  /*
+   the method for judging two number equal !( x ^ y ) 
+  */
+  const int tar = 0xAA;
+  int Dtar = ( tar << 8 ) + tar;
+  int DDtar = ( Dtar << 16 ) + Dtar;
+  return !( ( x & DDtar ) ^ DDtar);
 }
 /* 
  * negate - return -x 
@@ -193,7 +202,7 @@ int allOddBits(int x) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return  ~x + 1;
 }
 //3
 /* 
@@ -206,7 +215,16 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+  /*
+   split into tree situations:
+   1. if 0x30 <= x <= 0x37
+   2. if x == 0x38
+   3. if x == 0x39 
+  */
+  const int lowRangeSpe = 0x6;
+  const int highRange = 0x39;
+  const int transPoint = 0x38;
+  return ! ( ( x >> 3 ) ^ lowRangeSpe ) | !( x ^ highRange ) | !( x ^ transPoint);
 }
 /* 
  * conditional - same as x ? y : z 
@@ -216,7 +234,11 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+  /*
+  0 = 1 + 0xffffffff
+  */
+  int trans = !( !x ) + (~0);
+  return ( ~trans & y ) | ( trans & z );
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -226,7 +248,11 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+  int reverX = ( ~ x ) + 1;
+  int result = y + reverX;        // result = y - x;
+  int sign = ( result >> 31) & 1;
+  int bitXor = ( ( x >> 31 ) & 1 ) ^ ( ( y >> 31 ) & 1 );
+  return ( (!bitXor) & (!sign) ) | ( (bitXor & ( ( x >> 31 ) & 1 ) ) ); 
 }
 //4
 /* 
@@ -238,7 +264,10 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+  /*
+  if x equals to 0, (x - 1 = 0xffffffff) & 1 = 1 =  ~ x
+  */
+  return ( ( x | ( ( ~ x ) + 1 ) ) >> 31 ) + 1; 
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -252,8 +281,23 @@ int logicalNeg(int x) {
  *  Max ops: 90
  *  Rating: 4
  */
+
 int howManyBits(int x) {
-  return 0;
+  int bit16, bit8, bit4, bit2, bit1, bit0;
+  int sign = x >> 31;
+  x = ( sign & ~ x ) | ( ~ sign & x );
+  bit16 = !!( x >> 16 ) << 4;
+  x = x >> bit16;
+  bit8 = !!( x >> 8 ) << 3;
+  x = x >> bit8;
+  bit4 = !!( x >> 4 ) << 2;
+  x = x >> bit4;
+  bit2 = !!(x >> 2) << 1;
+  x = x >> bit2;
+  bit1 = !!(x >> 1);
+  x = x >> bit1;
+  bit0 = x;
+  return bit16 + bit8 + bit4 + bit2 + bit1 + bit0 + 1;
 }
 //float
 /* 
@@ -268,7 +312,28 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+  /*
+    generate Mask:
+    ( 1 << pos ) - 1 we will get 000...001111
+    using the operand ~ we will have 111...110000
+  */
+  const unsigned fracMask = ( 1 << 23 ) - 1;
+  const unsigned expMask =  ( 1 << 8 ) - 1;
+  unsigned sign = ( uf >> 31 ) & 1;
+  unsigned frac = uf & fracMask;
+  unsigned exp =  (uf >> 23) & expMask;
+
+  if ( exp == expMask ) return uf;
+  if ( exp == 0x0 ) {
+    if ( frac == 0x0 ) return uf;
+    if (! ( ( frac >> 22 ) & 1 )) {
+      frac = frac << 1;
+    }else{
+      frac = (frac << 1) & fracMask;
+      exp = 0x1;
+    }
+  }else  exp = exp + 1;
+  return (sign << 31 ) + (exp << 23) + frac;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -283,7 +348,7 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+  return 0;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
