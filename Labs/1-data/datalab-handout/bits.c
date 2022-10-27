@@ -348,7 +348,28 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 0;
+  // initial work
+  unsigned rv = 1;
+  const unsigned fracMask = ( 1 << 23 ) - 1;
+  const unsigned expMask =  ( 1 << 8 ) - 1;
+  const unsigned fixRetVal = 0x80000000;
+  unsigned sign = ( uf >> 31 ) & 1;
+  unsigned frac = uf & fracMask;
+  unsigned exp =  (uf >> 23) & expMask;
+  unsigned bias = ( 1 << 7 ) - 1;
+  int realExp = exp - bias;
+  int rvsign = (sign)? -1 : 1;
+
+
+  // judge the number is denormalized!
+  // if the exp value < 0 then no matter how big the frac part is 
+  // the value can not be greater than 1, so it returns 0!
+  if ( realExp < 0 ) return 0;   
+  // if the exp < 31 out of the range return the 0x80000000u
+  // or generate the target value
+  if ( realExp >= 31 ) return fixRetVal;
+  if ( realExp < 23 ) return rvsign * ( (rv << realExp)+ ( frac >> ( 23 - realExp ) ) );
+  else return rvsign * ( (rv << realExp) + (frac << ( realExp - 23 ) ) );
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -364,5 +385,11 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+    const int bias = 127;
+    const int zeroVal = 0x0;
+    const int posINF = 0x7f800000;
+    int realExp = x + bias;
+    if ( realExp < zeroVal ) return 0;
+    if ( realExp > 255 ) return posINF;
+    return (realExp << 23) + 0x0;
 }
